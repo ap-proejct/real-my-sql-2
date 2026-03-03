@@ -1,0 +1,9 @@
+# 대용량 SQL 파일 - git 제외 (직접 다운로드 필요)
+employees.sql
+
+# OS 관련
+.DS_Store
+Thumbs.db
+
+# 로컬 Docker 볼륨
+mysql_data/
