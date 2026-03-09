@@ -1992,3 +1992,243 @@ mysql> DROP DATABASE [IF EXISTS] employees;
 ### 11-7-4. 테이블 변경
 
 #### 11-7-4-1. 테이블 생성
+
+```sql
+mysql> CREATE [TEMPORARY] TABLE [IF NOT EXISTS] tb_test (
+        member_id BIGINT [UNSIGNED] [AUTO_INCREMENT],
+        nickname CHAR(20) [CHARACTER SET 'utf8'] [COLLATE 'utf8_general_ci'] [NOT NULL],
+        home_url VARCHAR(200) [COLLATE 'latin1_general_cs'],
+        birth_year SMALLINT [(4)] [UNSIGNED] [ZEROFILL],
+        member_point INT [NOT NULL] [DEFAULT 0],
+        registered_dttm DATETIME [NOT NULL],
+        modified_ts TIMESTAMP [NOT NULL] [DEFAULT CURRENT_TIMESTAMP],
+        gender ENUM('Female', 'Male') [NOT NULL],
+        hobby SET('Reading', 'Game', 'Sports'),
+        profil TEXT [NOT NULL],
+        session_data BLOB,
+        PRIMARY KEY (member_id),
+        UNIQUE INDEX ux_nickname (nickname),
+        INDEX ix_registerddttm (registered_dttm)
+        ) ENGINE=InnoDB;
+```
+
+ - 모든 칼럼은 NULL 또는 NOT NULL 제약을 명시할 수 있다.
+ - 문자열 타입은 타입 뒤에 반드시 최대한 저장할 수 있는 문자 수를 명시해야한다. CHARACTER SET절은 칼럼에 저장되는 문자열 값이 어떤 문자 집합을 사용할지를 결정, COLLATE로 문자열 비교나 정렬 규칙을 나타내기 위한 콜레이션을 설정할 수 있다.
+ - 숫자 타입은 선택적으로 길이를 가질 수 있지만, 저장될 값의 길이가 아닌 단순히 보여줄 길이를 지정하는 것이다. 
+ - SIGNED는 음수와 양수 모두 저장할 수 있다.
+ - ZEROFILL은 왼쪽에 '0'을 패딩할지 결정하는 옵션이다.
+ - DATE, DATETIME, TIMESTAMP 모두 값이 자동으로 현재 시간으로 업데이트되도록 기본 값을 명시할 수 있다.
+ - ENUM 또는 SET 타입은 타입의 이름 뒤에 해당 칼럼이 가질 수 있는 값을 괄호로 정의해야 한다.
+
+ #### 11-7-4-2. 테이블 구조 조회
+
+ `SHOW CREATE TABLE` : 테이블의 구조를 확인하는 쿼리. 테이블의 CREATE TABLE 문장을 표시한다.
+
+ `DESC` : `DESCRIBE`의 약어 형태, 테이블의 칼럼 정보를 보기 편한 표 형태로 표시해준다.
+
+ #### 11-7-4-3. 테이블 구조 변경
+
+`ALTER TABLE` : 테이블의 구조를 변경하는 쿼리, 테이블 자체의 속성 뿐만 아니라 인덱스의 추가/삭제, 칼럼의 추가/삭제 등 다양한 용도로 사용된다.
+
+```sql
+ mysql> ALTER TABLE employees
+        CONVERT TO CHARACTER SET UTF8MB4 UTF8MB4_GENERAL_CI,
+        ALGORITHM = INPLACE,
+        LOCK = NONE;
+
+mysql> ALTER TABLE employees
+        ENGINE = InnoDB,
+        ALGORITHM = INPLACE,
+        LOCK = NONE;
+```
+
+#### 11-7-4-4. 테이블 명 변경
+
+`RENAME TABLE` : 테이블 명을 변경하거나 다른 데이터베이스로 테이블을 이동할 때 사용하는 쿼리.
+
+```sql
+mysql> RENAME TABLE table1 TO table2;
+mysql> RENAME TABLE db1.table1 TO db2.table2;
+```
+
+두번째 쿼리 데이터베이스를 옮기는 작업을 하면 교체하는 동안 일시적으로 기존 테이블이 없어지는 시점이 발생한다.
+
+이를 방지하기 RENAME 쿼리를 하나의 문장으로 묶어서 실행할 수 있으며, 이때 명시된 모든 테이블은 잠금을 걸고 변경 작업을 진행한다.
+
+```sql
+mysql> RENAME TABLE batch TO batch_old,
+        batch_new TO batch;
+```
+
+#### 11-7-4-5. 테이블 상태 조회
+
+```sql
+mysql> SHOW TABLE STATUS LIKE 'employees' \G
+
+mysql> SELECT * FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = 'employees'
+        AND TABLE_NAME = 'employees' \G;
+```
+
+> 참고 : `\G`는 레코드의 칼럼을 라인당 하나씩만 표현하게 하는 옵션이다.
+
+> 참고 : information_schema 데이터베이스의 테이블들은 MyySQL 서버가 가진 테이블들에 대한 다양한 정보를 제공한다.
+> - 데이터베이스 객체에 대한 메타 정보
+> - 테이블과 칼럼에 대한 간략한 통계 정보
+> - 전문 검색 디버깅을 위한 뷰
+> - 압축 실행과 실패 횟수에 대한 집계
+
+
+#### 11-7-4-6. 테이블 구조 복사
+
+```sql
+--// 테이블 구조 복사
+mysql> CREATE TABLE temp_employees LIKE employees;
+
+--// 테이블 데이터 복사
+mysql> INSERT INTO temp_employees SELECT * FROM employees;
+```
+
+#### 11-7-4-7. 테이블 삭제
+
+```sql
+mysql> DROP TABLE [IF EXISTS] table1;
+```
+**주의** : 어댑티브 해시 인덱스가 활성화돼 있는 경우, 삭제시 어댑티브 해시 인덱스 정보도 모두 삭제되기 때문에 서버의 부하가 높아지고 간접적으로 다른 쿼리 처리에 영향을 미칠 수도 있다.
+
+### 11-7-5. 칼럼 변경
+
+#### 11-7-5-1. 칼럼 추가
+
+```sql
+--// 테이블의 제일 마지막에 새로운 칼럼을 추가
+mysql> ALTER TABLE employees ADD COLUMN emp_telno VARCHAR(20), ALGORITHM=INSTANT;
+
+--// 테이블의 중간에 새로운 칼럼을 추가
+mysql> ALTER TABLE employees ADD COLUMN emp_telno VARCHAR(20) AFTER emp_no, ALGORITHM=INSTANT, LOCK=NONE;
+```
+
+#### 11-7-5-2. 칼럼 삭제
+
+삭제는 항상 INPLACE 알고리즘으로만 가능하다.
+
+```sql
+mysql> ALTER TABLE employees DROP COLUMN emp_telno,
+        ALGORITHM=INPLACE, LOCK=NONE;
+```
+
+#### 11-7-5-3. 칼럼 이름 및 칼럼 타입 변경
+
+```sql
+--// 칼럼의 이름 변경
+mysql> ALTER TABLE salaries CHANGE to_date end_date DATE NOT NULL, ALGORITHM=INPLACE, LOCK=NONE;
+
+--// INT 칼럼을 VARCHAR 타입으로 변경
+mysql> ALTER TABLE salaries MODIFY salary VARCHAR(20), ALGORITHM=COPY, LOCK=SHARED;
+
+--// VARCHAR 타입의 길이 확장
+mysql> ALTER TABLE employees MODIFY last_name VARCHAR(30) NOT NULL, ALGORITHM=INPLACE, LOCK=NONE;
+
+--// VARCHAR 타입의 길이 축소
+mysql> ALTER TABLE employees MODIFY last_name VARCHAR(10) NOT NULL, ALGORITHM=COPY, LOCK=SHARED;
+```
+
+### 11-7-6. 인덱스 변경
+
+#### 11-7-6-1. 인덱스 추가
+
+```sql
+mysql> ALTER TABLE employees ADD PRIMARY KEY (emp_no)
+        ALGORITHM=INPLACE, LOCK=NONE;
+
+mysql> ALTER TABLE employees ADD UNIQUE INDEX ux_empno (emp_no)
+        ALGORITHM=INPLACE, LOCK=NONE;
+
+mysql> ALTER TABLE employees ADD INDEX ix_lastname (last_name)
+        ALGORITHM=INPLACE, LOCK=NONE;
+
+mysql> ALTER TABLE employees ADD FULLTEXT INDEX fx_firstname_lastname (first_name, last_name)
+        ALGORITHM=INPLACE, LOCK=SHARED;
+
+mysql> ALTER TABLE employees ADD SPATIAL INDEX fx_loc (last_location)
+        ALGORITHM=INPLACE, LOCK=SHARED;
+```
+#### 11-7-6-2. 인덱스 조회
+
+`SHOW INDEXES` : 테이블의 인덱스만 표시. 인덱스 칼럼별로 한 줄씩 표시해준다.
+
+`SHOW CREATE TABLE` : 테이블의 생성 구문을 그대로 보여준다.
+
+#### 11-7-6-3. 인덱스 이름 변경
+
+```sql
+mysql> ALTER TABLE salaries RENAME INDEX ix_salary TO ix_salary2, ALGORITHM=INPLACE, LOCK=NONE;
+```
+
+#### 11-7-6-4. 인덱스 가시성 변경
+
+인덱스를 삭제했다가 새로 생성하는 것은 많은 시간이 걸린다. 그래서 쿼리 실행할때 해당 인덱스를 사용할 수 있게 할지 말지를 결정하는 기능을 도입했다.
+
+```sql
+mysql> ALTER TABLE employees ALTER INDEX ix_firstname INVISIBLE;
+```
+
+#### 11-7-6-4. 인덱스 삭제
+
+`ALTER TABLE ,,, DROP INDEX ...` : 인덱스를 삭제하는 명령.
+
+```sql
+mysql> ALTER TABLE employees DROP PRIMARY KEY, ALGORITHM=COPY, LOCK=SHARED;
+
+mysql> ALTER TABLE employees DROP INDEX ux_empno, ALGORITHM=INPLACE, LOCK=NONE;
+
+mysql> ALTER TABLE employees DROP INDEX fx_loc, ALGORITHM=INPLACE, LOCK=NONE;
+```
+
+### 11-7-7. 테이블 변경 묶음 실행
+
+```sql
+mysql> ALTER TABLE employees
+        ADD INDEX ix_lastname (last_name, first_name),
+        ADD INDEX ix_birthdate (birth_date),
+        ALGROITHM=INPLACE, LOCK=NONE;
+```
+
+### 11-7-8. 프로세스 조회 및 강제 종료
+
+`SHOW PROCESSLIST` : 서버에 접속된 사용자의 목록이나 각 클라이언트 사용자가 현재 어떤 쿼리를 실행하고 있는지 확인하는 명령.
+
+특정 스레드의 실행 중인 쿼리나 커넥션 자체를 강제 종료하려면 KILL 명령으로 ID를 지정해주면 된다.
+
+#### 11-7-9. 활성 트랜잭션 조회
+
+```sql
+--// 5초 이상 실행된 트랜잭션 조회
+mysql> SELECT trx_id,
+        (SELECT CONCAT(user,'@',host)
+        FROM information_schema.proceesslist
+        WHERE id=trx_mysql_thread_id) AS source_info,
+        trx_state,
+        trx_started,
+        now(),
+        (unix_timestamp(now()) - unix_timestamp(trx_started)) AS lasting_sec,
+        trx_requested_lock_id,
+        trx_wait_started,
+        trx_mysql_thread_id,
+        trx_tables_in_use,
+        trx_tables_locked
+        FROM information_schema.innodb_trx
+        WHERE (unix_timestamp(now()) - unix_timestamp(trx_started)) > 5; \G
+```
+
+## 11-8. 쿼리 성능 테스트
+
+### 11-8-1. 쿼리의 성능에 영향을 미치는 요소
+
+ - 운영체제의 캐시
+
+ - MySQL 서버의 버퍼 풀(InnoDB 버퍼 풀과 MyISAM의 키 캐시)
+
+ - 독립된 MySQL 서버
+
+ - 쿼리 테스트 횟수
