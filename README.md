@@ -47,7 +47,7 @@
 | [**Chapter 02**](./chapter02/) | 12장 | 확장 검색 | `전문 검색` `공간 검색` `멀티 밸류 인덱스` |
 | [**Chapter 03**](./chapter03/) | 13장 | 파티션 | `파티션 종류` `파티션 프루닝` `파티션 주의사항` |
 | [**Chapter 04**](./chapter04/) | 14장 | 스토어드 프로그램 | `프로시저` `함수` `트리거` `이벤트` |
-| [**Chapter 05**](./chapter05/) | 15장 | 준비된 트랜잭션 (XA) | `XA 트랜잭션` `분산 트랜잭션` `2PC` |
+| [**Chapter 05**](./chapter05/) | 15장 | 데이터 타입|  |
 | [**Chapter 06**](./chapter06/) | 16장 | 복제 (Replication) | `Binary Log` `GTID` `준동기 복제` `복제 지연` |
 | [**Chapter 07**](./chapter07/) | 17장 | InnoDB 클러스터 | `Group Replication` `MySQL Shell` `고가용성` |
 | [**Chapter 08**](./chapter08/) | 18장 | Performance 스키마 | `performance_schema` `sys 스키마` `모니터링` |
